@@ -2,16 +2,12 @@
   text-align: center;
 }
 
- 
-
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
   }
 }
 
- 
- 
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
@@ -55,4 +51,35 @@
   font-size: 8pt;
   font-weight: bold;
   margin-top: 4px;
+}
+
+.reminder
+{
+  border: dotted 1px #ccc;  
+  min-height: 10px;
+}
+.reminder:hover
+{
+  border: dotted 1px #444;  
+  cursor: pointer;
+}
+.add-reminder{
+  font-size: small;
+  position: relative;
+  left: 0;
+  vertical-align:top;
+  border-radius: 2px;
+  border: solid 1px #bbb;
+  padding-left: 2px;
+  padding-right: 2px;
+  cursor: pointer;
+  width: 17px;
+}
+.add-reminder:hover
+{
+  border: solid 1px #aaa;  
+  cursor: pointer;
+  color: #fff;
+  background-color: #aaa;
+
 }

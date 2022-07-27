@@ -1,16 +1,26 @@
-import React , {Component, useState,useRef} from 'react';
+import React , {Component, useState,useRef,useMemo} from 'react';
 import './App.css';
 import { useTable } from 'react-table'
+import Reminder from './Reminder'
+import AddReminderBtn from './AddReminderBtn';
+
 
 function App() {
   const reminderTextRef=useRef();
   const reminderTimeRef=useRef();
+  const reminderDateRef=useRef();
   const selectedDay=useRef();
   const [reminders,setReminders]=useState([])
+  const [calDays,setCalDays]=useState([])
   const [selected,setSelected]=useState([])
-  
+ 
+
   var items=[];
 
+  function getNextId()
+  {
+    return reminders.length+1;
+  }
   function formatTime(t) {
     let pm="";
     let part = t.split(':');
@@ -25,10 +35,14 @@ function App() {
 
   function handleSelected(w)
   {
+
     console.log(w);
-    setSelected(w);
-    reminderTextRef.current.value=w.text;
-    reminderTimeRef.current.value=w.time;
+    let reminder=reminders.find(x=>x.id==w);
+    setSelected(reminder);
+    reminderTextRef.current.value=reminder.text;
+    reminderTimeRef.current.value=reminder.time;
+    alert(reminder.when)
+    reminderDateRef.current.value=((new Date(reminder.when)).getDate());
   }
 
   function handleCancel()
@@ -41,18 +55,42 @@ function App() {
     if (!selected)return;
     selected.text=reminderTextRef.current.value;
     selected.time=reminderTimeRef.current.value;
+    selected.when=  new Date(2022, 6, reminderDateRef.current.value) ;
+    alert( selected.when);
+    alert(  selected.id );
     let others=reminders.filter(x=>x.id!==selected.id);
+
     others.push(selected);
     setReminders(others);
     setSelected(null);
     console.log(reminders)
   }
-
-  function getReminderText(id)
+  function handleAddNew(){
+    let newReminder={id:getNextId(),  day:null,text:'' ,time:'', when:new Date()};
+    alert("new id " + newReminder.id);
+     setSelected(newReminder);
+  
+  }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  function getReminderText(key)
   {
-    let q=reminders.find(x=>x.id==id);
+    let calDate=calDays.find(x=>x.key==key);
+    console.log("qqqqq:",calDate);
+ 
+    if(!calDate || !calDate.when) return "-";
     
-    return q ?<> <div>{q.time?formatTime(q.time):""}</div><div>{q.text}</div> </>  : "";
+    let q=reminders.filter(x=>x.when==calDate.when);
+    console.log(q);
+    if(!q) return "*";
+    return q ?<> 
+      {q.map(r=>(
+       <> 
+          <div  >
+            <Reminder reminder={r} handleClick={handleSelected}/>
+          </div> 
+       </>
+      ) )}
+      </>:""
   }
   const getCalValues=()=>{
     setSelected(null)
@@ -66,7 +104,8 @@ function App() {
     let prev = new Date(curr.getFullYear(), curr.getMonth(), 0);
     let start=prev.getDate()-firstDay.getDay();
     console.log(start);
- 
+    var ids=1;
+    let calItems=[];
     for(let i=1;i<7*7;i++)
     {
       let x=new Date(prev.getFullYear(),prev.getMonth(),(start+i));
@@ -86,12 +125,18 @@ function App() {
           col7: <div class={dayLst[(i*7)+6].getMonth()==curr.getMonth() ? "td-div":"td-div2"}>{dayLst[(i*7)+6].getDate()}</div>,
         }
       );
-      for(let j=0;j<8;j++){
-        items.push({id:"cell_" + (i ) + "_col"+j ,day:dayLst[i*7+j-1],text:'' ,time:''});
+      for(let j=1;j<8;j++){
+        let s=dayLst[(i*7)+j-1].toDateString();
+        calItems.push({key:("cell_" + (i ) + "_col"+j),   when:s });
+        items.push({id:ids++,  day:dayLst[i*7+j-1],text:'' ,time:'', when:s,cell:("cell_" + (i ) + "_col"+j)});
+ 
       }
      
     }
     setReminders(items);
+    if(calItems && calItems.length> 40) setCalDays(calItems);
+    
+   // console.log(calDays);
     return weekLst;
   }
   
@@ -146,7 +191,10 @@ function App() {
   return (
     <>
     <div class="edit-box" hidden={selected?false:true}>
-      <div>Date: {selected && selected.day? selected.day.getFullYear() + "-" +  selected.day.getMonth() + "-"+ selected.day.getDate():'-'}</div>
+      <div>
+        <label>Reminder Date: </label>
+        <input ref={reminderDateRef}  type="number"/> 
+      </div>
      
       <div>
         <label>Reminder Time: </label>
@@ -160,9 +208,7 @@ function App() {
 
       <div>
         <button onClick={handleSave}>Save</button><button onClick={handleCancel}>Cancel</button>
-      </div>
-      
-      
+      </div>      
     </div>
     
     <table {...getTableProps()} style={{ border: 'solid 1px #ccc' }} class="cal-table">
@@ -193,7 +239,7 @@ function App() {
             <tr {...row.getRowProps()}>
               {row.cells.map(cell => {
                 return (
-                  <td onClick={()=>{handleSelected( reminders.find(x=>x.id===cell.getCellProps().key) ); }} 
+                  <td 
                     
                     {...cell.getCellProps()}
                     style={{
@@ -207,8 +253,10 @@ function App() {
                   >
                     <div class="calday-number">
                       { cell.render('Cell') }
+                      <AddReminderBtn getCellProps={cell.getCellProps} handleClick={handleAddNew} />
                     </div>
-                    
+
+
                     <div class="reminder-text">
                     {  getReminderText(cell.getCellProps().key) }
                     </div>
